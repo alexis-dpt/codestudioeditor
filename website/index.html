@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeStudioEditor — Lightweight modern code editor for Windows</title>
+  <meta name="description" content="CodeStudioEditor is a fast, lightweight and modern code editor for Windows. Free, portable and optimized for low-spec PCs.">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta property="og:title" content="CodeStudioEditor — Lightweight modern code editor">
+  <meta property="og:description" content="A fast, lightweight and modern code editor for Windows. Free and portable.">
+  <meta property="og:image" content="https://i.ibb.co/1GWrgRLy/codeeditorstudio.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="CodeStudioEditor — Lightweight modern code editor">
+  <meta name="twitter:description" content="A fast, lightweight and modern code editor for Windows.">
+  <meta name="twitter:image" content="https://i.ibb.co/1GWrgRLy/codeeditorstudio.png">
+  <link rel="icon" href="https://i.ibb.co/1GWrgRLy/codeeditorstudio.png" type="image/png">
+  <link rel="preconnect" href="https://i.ibb.co">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --bg-2: #0f0f0f;
+      --surface: #141414;
+      --surface-2: #1a1a1a;
+      --field: #232323;
+      --border: #222222;
+      --border-2: #2a2a2a;
+      --text: #d4d4d4;
+      --text-muted: #6e6e6e;
+      --text-dim: #4a4a4a;
+      --accent: #007acc;
+      --accent-hover: #0098ff;
+      --on-accent: #ffffff;
+      --kw: #569cd6;
+      --str: #ce9178;
+      --com: #6a9955;
+      --num: #b5cea8;
+      --fn: #dcdcaa;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      --mono: 'Cascadia Code', Consolas, 'Courier New', monospace;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+      --transition: 150ms ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 90px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 56px 56px;
+      background-position: center center;
+      pointer-events: none;
+      z-index: 0;
+      mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, black 30%, transparent 90%);
+      -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, black 30%, transparent 90%);
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0, 122, 204, 0.10) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--field);
+      border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-2);
+    }
+
+    ::selection {
+      background: var(--accent);
+      color: var(--on-accent);
+    }
+
+    a {
+      color: var(--accent-hover);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+
+    a:hover {
+      color: var(--accent-hover);
+      text-decoration: underline;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent-hover);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      height: 68px;
+      display: flex;
+      align-items: center;
+      background: transparent;
+      border-bottom: 1px solid transparent;
+      transition: background var(--transition), border-color var(--transition), backdrop-filter var(--transition);
+    }
+
+    .navbar.scrolled {
+      background: rgba(10, 10, 10, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom-color: var(--border);
+    }
+
+    .navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.95rem;
+      white-space: nowrap;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-brand:hover {
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .nav-brand img {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+    }
+
+    .nav-links {
+      display: none;
+      align-items: center;
+      gap: 30px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color var(--transition);
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .lang-switch {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 0.82rem;
+      color: var(--text-dim);
+    }
+
+    .lang-switch button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font: inherit;
+      cursor: pointer;
+      padding: 4px 7px;
+      border-radius: 4px;
+      transition: color var(--transition), background var(--transition);
+      font-weight: 500;
+    }
+
+    .lang-switch button:hover {
+      color: var(--text);
+    }
+
+    .lang-switch button.active {
+      color: var(--accent-hover);
+      font-weight: 600;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      padding: 10px 20px;
+      transition: background var(--transition), border-color var(--transition), color var(--transition), transform var(--transition), box-shadow var(--transition);
+      text-decoration: none;
+      white-space: nowrap;
+      letter-spacing: -0.01em;
+    }
+
+    .btn:hover {
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--on-accent);
+      border-color: var(--accent);
+      box-shadow: 0 4px 20px rgba(0, 122, 204, 0.25);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+      color: var(--on-accent);
+      box-shadow: 0 6px 28px rgba(0, 152, 255, 0.4);
+    }
+
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text);
+      border-color: var(--border-2);
+    }
+
+    .btn-outline:hover {
+      background: var(--field);
+      border-color: var(--field);
+      color: var(--text);
+    }
+
+    .btn-sm {
+      padding: 8px 15px;
+      font-size: 0.82rem;
+    }
+
+    .btn-lg {
+      padding: 15px 32px;
+      font-size: 0.98rem;
+      gap: 10px;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .hero {
+      position: relative;
+      padding: 150px 0 60px;
+      text-align: center;
+    }
+
+    .hero-logo-wrap {
+      position: relative;
+      width: 92px;
+      height: 92px;
+      margin: 0 auto 32px;
+      animation: floatLogo 6s ease-in-out infinite;
+    }
+
+    .hero-logo-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      background: radial-gradient(circle, rgba(0, 122, 204, 0.35) 0%, transparent 70%);
+      filter: blur(20px);
+      border-radius: 50%;
+      z-index: -1;
+      animation: pulseGlow 4s ease-in-out infinite;
+    }
+
+    .hero-logo {
+      width: 92px;
+      height: 92px;
+      border-radius: 20px;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.06),
+        0 10px 40px rgba(0, 122, 204, 0.3);
+    }
+
+    @keyframes floatLogo {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.15); }
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--accent-hover);
+      background: rgba(0, 122, 204, 0.08);
+      border: 1px solid rgba(0, 122, 204, 0.25);
+      padding: 5px 14px;
+      border-radius: 100px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(8px);
+    }
+
+    .badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-hover);
+      box-shadow: 0 0 8px var(--accent-hover);
+      animation: badgePulse 2s ease-in-out infinite;
+    }
+
+    @keyframes badgePulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .hero h1 {
+      font-size: clamp(2.1rem, 5.5vw, 3.6rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 22px;
+      color: #ffffff;
+      background: linear-gradient(180deg, #ffffff 0%, #b8b8b8 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p.subtitle {
+      font-size: clamp(1rem, 2.4vw, 1.15rem);
+      color: var(--text-muted);
+      max-width: 580px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+
+    .hero-note {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      letter-spacing: 0.3px;
+    }
+
+    .hero-note span {
+      margin: 0 8px;
+      opacity: 0.6;
+    }
+
+    .editor-section {
+      position: relative;
+      padding: 60px 0 100px;
+    }
+
+    .editor-window {
+      position: relative;
+      background: #0d0d0d;
+      border: 1px solid var(--border-2);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.02),
+        0 30px 80px rgba(0, 0, 0, 0.8),
+        0 0 120px rgba(0, 122, 204, 0.08);
+      max-width: 1000px;
+      margin: 0 auto;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .mock-menubar {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 6px 16px;
+      background: #0d0d0d;
+      border-bottom: 1px solid #1a1a1a;
+      font-family: var(--font);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .mock-menubar span {
+      cursor: default;
+    }
+
+    .mock-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #0d0d0d;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .mock-toolbar-btn {
+      padding: 5px 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+      background: #1a1a1a;
+      border: 1px solid #232323;
+      border-radius: 4px;
+      font-family: var(--font);
+    }
+
+    .mock-toolbar-spacer {
+      flex: 1;
+    }
+
+    .mock-select {
+      padding: 5px 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+      background: #1a1a1a;
+      border: 1px solid #232323;
+      border-radius: 4px;
+      font-family: var(--font);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mock-select::after {
+      content: '▾';
+      font-size: 8px;
+      opacity: 0.6;
+    }
+
+    .mock-main {
+      display: flex;
+      min-height: 460px;
+      background: #0d0d0d;
+    }
+
+    .mock-sidebar {
+      width: 200px;
+      flex-shrink: 0;
+      background: #0f0f0f;
+      border-right: 1px solid #1a1a1a;
+      display: flex;
+      flex-direction: column;
+      font-family: var(--font);
+    }
+
+    .mock-sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border-bottom: 1px solid #1a1a1a;
+      padding: 0 8px;
+    }
+
+    .mock-sidebar-tab {
+      padding: 10px 12px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      cursor: default;
+    }
+
+    .mock-sidebar-tab.active {
+      color: var(--text);
+      border-bottom: 1px solid var(--accent);
+      margin-bottom: -1px;
+    }
+
+    .mock-sidebar-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .mock-sidebar-icons {
+      display: flex;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .mock-sidebar-icons span {
+      width: 14px;
+      height: 14px;
+      background: #232323;
+      border-radius: 2px;
+    }
+
+    .mock-sidebar-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 40px 16px 0;
+      text-align: center;
+    }
+
+    .mock-sidebar-empty p {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .mock-open-btn {
+      padding: 6px 14px;
+      font-size: 11px;
+      color: var(--text-muted);
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 4px;
+      font-family: var(--font);
+    }
+
+    .mock-editor-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: #0d0d0d;
+    }
+
+    .mock-tabbar {
+      display: flex;
+      background: #0f0f0f;
+      border-bottom: 1px solid #1a1a1a;
+      min-height: 34px;
+    }
+
+    .mock-tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      font-size: 11px;
+      color: var(--text);
+      background: #0d0d0d;
+      border-right: 1px solid #1a1a1a;
+      font-family: var(--font);
+    }
+
+    .mock-tab .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .mock-tab-spacer {
+      flex: 1;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .mock-code {
+      flex: 1;
+      display: flex;
+      padding: 14px 0;
+      overflow: hidden;
+      line-height: 1.7;
+      background: #0d0d0d;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .mock-line-numbers {
+      padding: 0 16px;
+      text-align: right;
+      color: #3a3a3a;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .mock-code-content {
+      padding-right: 24px;
+      white-space: pre;
+      color: var(--text);
+    }
+
+    .mock-code-content .tok-kw { color: var(--kw); }
+    .mock-code-content .tok-fn { color: var(--fn); }
+    .mock-code-content .tok-str { color: var(--str); }
+
+    .mock-output {
+      border-top: 1px solid #1a1a1a;
+      background: #0f0f0f;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      font-family: var(--font);
+    }
+
+    .mock-output-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .mock-output-close {
+      color: var(--text-dim);
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .mock-statusbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 14px;
+      background: #1a6fc4;
+      color: #ffffff;
+      font-size: 10px;
+      font-family: var(--font);
+      letter-spacing: 0.2px;
+    }
+
+    .mock-statusbar-left,
+    .mock-statusbar-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .mock-statusbar span {
+      opacity: 0.95;
+    }
+
+    .section {
+      padding: 100px 0;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .section-header h2 {
+      font-size: clamp(1.7rem, 4vw, 2.4rem);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin-bottom: 14px;
+      color: #ffffff;
+      background: linear-gradient(180deg, #ffffff 0%, #c0c0c0 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .section-header p {
+      color: var(--text-muted);
+      max-width: 520px;
+      margin: 0 auto;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .feature-card {
+      background: rgba(20, 20, 20, 0.6);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 30px 26px;
+      transition: border-color var(--transition), transform var(--transition), background var(--transition), box-shadow var(--transition);
+      backdrop-filter: blur(8px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 122, 204, 0.5), transparent);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .feature-card:hover {
+      border-color: var(--border-2);
+      transform: translateY(-3px);
+      background: rgba(26, 26, 26, 0.8);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .feature-card:hover::before {
+      opacity: 1;
+    }
+
+    .feature-icon {
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 122, 204, 0.1);
+      border: 1px solid rgba(0, 122, 204, 0.25);
+      border-radius: var(--radius-sm);
+      margin-bottom: 20px;
+      color: var(--accent-hover);
+    }
+
+    .feature-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .feature-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .feature-card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      max-width: 880px;
+      margin: 0 auto;
+    }
+
+    .step {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      background: rgba(20, 20, 20, 0.6);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 26px;
+      backdrop-filter: blur(8px);
+      transition: border-color var(--transition), transform var(--transition);
+    }
+
+    .step:hover {
+      border-color: var(--border-2);
+      transform: translateY(-2px);
+    }
+
+    .step-number {
+      flex-shrink: 0;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+      color: var(--on-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 16px rgba(0, 122, 204, 0.35);
+    }
+
+    .step h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .step p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .install-note {
+      max-width: 880px;
+      margin: 24px auto 0;
+      padding: 16px 20px;
+      background: rgba(0, 122, 204, 0.06);
+      border: 1px solid rgba(0, 122, 204, 0.25);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      color: var(--text);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      backdrop-filter: blur(8px);
+      line-height: 1.55;
+    }
+
+    .install-note svg {
+      width: 18px;
+      height: 18px;
+      color: var(--accent-hover);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .requirements {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      max-width: 880px;
+      margin: 0 auto;
+    }
+
+    .req-item {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      background: rgba(20, 20, 20, 0.6);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 26px;
+      backdrop-filter: blur(8px);
+      transition: border-color var(--transition), transform var(--transition);
+    }
+
+    .req-item:hover {
+      border-color: var(--border-2);
+      transform: translateY(-2px);
+    }
+
+    .req-icon {
+      width: 42px;
+      height: 42px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface-2);
+      border: 1px solid var(--border-2);
+      border-radius: var(--radius-sm);
+      color: var(--accent-hover);
+    }
+
+    .req-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .req-label {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .req-value {
+      font-size: 0.95rem;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .final-cta {
+      text-align: center;
+      padding: 100px 0;
+      position: relative;
+    }
+
+    .final-cta::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px;
+      height: 300px;
+      max-width: 100%;
+      background: radial-gradient(ellipse, rgba(0, 122, 204, 0.18) 0%, transparent 70%);
+      pointer-events: none;
+      filter: blur(30px);
+    }
+
+    .final-cta .container {
+      position: relative;
+      z-index: 1;
+    }
+
+    .final-cta h2 {
+      font-size: clamp(1.7rem, 4vw, 2.4rem);
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #ffffff;
+      letter-spacing: -0.025em;
+      background: linear-gradient(180deg, #ffffff 0%, #c0c0c0 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .final-cta p {
+      color: var(--text-muted);
+      margin-bottom: 34px;
+      font-size: 1rem;
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+      position: relative;
+    }
+
+    .footer .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      text-align: center;
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .footer-brand img {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+    }
+
+    .footer-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 8px 20px;
+      font-size: 0.82rem;
+      color: var(--text-dim);
+    }
+
+    .footer-meta a {
+      color: var(--text-muted);
+    }
+
+    .footer-meta a:hover {
+      color: var(--accent-hover);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(26, 26, 26, 0.95);
+      color: var(--text);
+      border: 1px solid var(--border-2);
+      border-radius: var(--radius-sm);
+      padding: 14px 22px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 300ms ease, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(12px);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast svg {
+      width: 16px;
+      height: 16px;
+      color: #27c93f;
+      flex-shrink: 0;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 700ms cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 700ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (min-width: 640px) {
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .requirements {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 900px) {
+      .nav-links {
+        display: flex;
+      }
+      .features-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .steps {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .footer .container {
+        flex-direction: row;
+        justify-content: space-between;
+        text-align: left;
+      }
+      .hero {
+        padding: 170px 0 70px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+      * {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+      }
+      .reveal {
+        opacity: 1;
+        transform: none;
+      }
+      .hero-logo-wrap,
+      .hero-logo-wrap::before,
+      .badge::before {
+        animation: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar" id="navbar">
+    <div class="container">
+      <a href="#top" class="nav-brand">
+        <img src="https://i.ibb.co/1GWrgRLy/codeeditorstudio.png" alt="CodeStudioEditor logo" width="28" height="28">
+        <span>CodeStudioEditor</span>
+      </a>
+      <nav aria-label="Main navigation">
+        <ul class="nav-links">
+          <li><a href="#features" data-i18n="nav.features">Features</a></li>
+          <li><a href="#install" data-i18n="nav.install">Install</a></li>
+          <li><a href="#requirements" data-i18n="nav.requirements">Requirements</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <div class="lang-switch" role="group" aria-label="Language selector">
+          <button type="button" data-lang="en" class="active" aria-pressed="true">EN</button>
+          <span aria-hidden="true" style="opacity:0.3">|</span>
+          <button type="button" data-lang="fr" aria-pressed="false">FR</button>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm download-btn" data-i18n="nav.download">Download</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="container">
+        <div class="hero-logo-wrap">
+          <img src="https://i.ibb.co/1GWrgRLy/codeeditorstudio.png" alt="CodeStudioEditor application logo" class="hero-logo" width="92" height="92">
+        </div>
+        <div class="badge">V1.0.0</div>
+        <h1 data-i18n="hero.title">A lightweight code editor built for speed</h1>
+        <p class="subtitle" data-i18n="hero.subtitle">CodeStudioEditor gives you everything you need to write code on Windows — nothing you don't.</p>
+        <div class="hero-actions">
+          <button type="button" class="btn btn-primary btn-lg download-btn">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span data-i18n="hero.download">Download for Windows</span>
+          </button>
+          <a href="https://github.com/alexis-dpt" class="btn btn-outline btn-lg" target="_blank" rel="noopener noreferrer">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 2.9-.39c.98 0 1.97.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.69 5.39-5.25 5.68.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.13 0 .31.21.67.8.56A10.52 10.52 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/>
+            </svg>
+            <span data-i18n="hero.github">View on GitHub</span>
+          </a>
+        </div>
+        <p class="hero-note">
+          <span data-i18n="hero.free">Free</span><span aria-hidden="true">·</span><span data-i18n="hero.lightweight">Lightweight</span><span aria-hidden="true">·</span><span data-i18n="hero.windows">Windows 10/11</span>
+        </p>
+      </div>
+    </section>
+
+    <section class="editor-section" aria-label="Application preview">
+      <div class="container">
+        <div class="editor-window reveal" role="img" aria-label="Screenshot of CodeStudioEditor">
+          <div class="mock-menubar" aria-hidden="true">
+            <span>File</span>
+            <span>Explorer</span>
+            <span>Edit</span>
+            <span>View</span>
+            <span>Run</span>
+            <span>Help</span>
+          </div>
+          <div class="mock-toolbar" aria-hidden="true">
+            <div class="mock-toolbar-btn">Open Folder</div>
+            <div class="mock-toolbar-btn">Save</div>
+            <div class="mock-toolbar-btn">Run</div>
+            <div class="mock-toolbar-btn">Build .exe</div>
+            <div class="mock-toolbar-spacer"></div>
+            <div class="mock-select">Python</div>
+            <div class="mock-select">Dark</div>
+            <div class="mock-select">EN</div>
+            <div class="mock-select" style="padding:5px 8px;">⚙</div>
+            <div class="mock-select" style="padding:5px 8px;">＋</div>
+          </div>
+          <div class="mock-main">
+            <aside class="mock-sidebar" aria-hidden="true">
+              <div class="mock-sidebar-header">
+                <div class="mock-sidebar-tab active">EXPLORER</div>
+                <div class="mock-sidebar-tab">SEARCH</div>
+              </div>
+              <div class="mock-sidebar-actions">
+                <span>NO FOLDER ...</span>
+                <div class="mock-sidebar-icons">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+              <div class="mock-sidebar-empty">
+                <p>Open a folder to start</p>
+                <div class="mock-open-btn">Open Folder</div>
+              </div>
+            </aside>
+            <div class="mock-editor-area">
+              <div class="mock-tabbar" aria-hidden="true">
+                <div class="mock-tab">Untitled <span class="dot"></span></div>
+                <div class="mock-tab-spacer"></div>
+              </div>
+              <div class="mock-code">
+                <div class="mock-line-numbers">1</div>
+                <div class="mock-code-content"><span class="tok-fn">print</span>(<span class="tok-str">"Hello World !"</span>)</div>
+              </div>
+              <div class="mock-output" aria-hidden="true">
+                <div class="mock-output-header">
+                  <span>OUTPUT</span>
+                  <span class="mock-output-close">✕</span>
+                </div>
+              </div>
+              <div class="mock-statusbar" aria-hidden="true">
+                <div class="mock-statusbar-left">
+                  <span>Python</span>
+                  <span>Ln 1, Col 23</span>
+                  <span>0 errors</span>
+                  <span>LF</span>
+                  <span>Midnight Blue</span>
+                </div>
+                <div class="mock-statusbar-right">
+                  <span>Ready</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-header reveal">
+          <h2 data-i18n="features.title">Everything you need, nothing more</h2>
+          <p data-i18n="features.subtitle">Built around the tools you actually use, with zero bloat.</p>
+        </div>
+        <div class="features-grid">
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+            </div>
+            <h3 data-i18n="features.f1.title">Full file manager</h3>
+            <p data-i18n="features.f1.desc">Create, rename, delete, duplicate and copy-paste files and folders without leaving the editor.</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </div>
+            <h3 data-i18n="features.f2.title">Search &amp; replace</h3>
+            <p data-i18n="features.f2.desc">Find anything instantly with Ctrl+F, including full regex support for advanced patterns.</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6"/>
+                <polyline points="8 6 2 12 8 18"/>
+              </svg>
+            </div>
+            <h3 data-i18n="features.f3.title">Syntax highlighting &amp; error detection</h3>
+            <p data-i18n="features.f3.desc">Clear, accurate coloring and inline error markers help you spot problems before running code.</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="7" height="7" rx="1"/>
+              </svg>
+            </div>
+            <h3 data-i18n="features.f4.title">Tabs &amp; command palette</h3>
+            <p data-i18n="features.f4.desc">Work on multiple files at once and reach any action with Ctrl+Shift+P.</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M2 12h20"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+            </div>
+            <h3 data-i18n="features.f5.title">8 themes + custom themes</h3>
+            <p data-i18n="features.f5.desc">Pick from eight built-in themes or create your own palette to match your style.</p>
+          </article>
+          <article class="feature-card reveal">
+            <div class="feature-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+            </div>
+            <h3 data-i18n="features.f6.title">Optimized for 4 GB RAM</h3>
+            <p data-i18n="features.f6.desc">Lightweight by design — CodeStudioEditor runs smoothly even on modest hardware.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="install">
+      <div class="container">
+        <div class="section-header reveal">
+          <h2 data-i18n="install.title">Up and running in seconds</h2>
+          <p data-i18n="install.subtitle">Install it and launch it — that's it. Or unzip for a portable build.</p>
+        </div>
+        <div class="steps">
+          <div class="step reveal">
+            <div class="step-number">1</div>
+            <div>
+              <h3 data-i18n="install.s1.title">Download the installer</h3>
+              <p data-i18n="install.s1.desc">Grab the latest setup .exe for Windows.</p>
+            </div>
+          </div>
+          <div class="step reveal">
+            <div class="step-number">2</div>
+            <div>
+              <h3 data-i18n="install.s2.title">Install and launch</h3>
+              <p data-i18n="install.s2.desc">Run the setup, launch the app and you're in.</p>
+            </div>
+          </div>
+          <div class="step reveal">
+            <div class="step-number">3</div>
+            <div>
+              <h3 data-i18n="install.s3.title">Start coding</h3>
+              <p data-i18n="install.s3.desc">Open a folder or a file and you're ready to go.</p>
+            </div>
+          </div>
+        </div>
+        <div class="install-note reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span data-i18n="install.note">Prefer portable? Unzip the installer archive to run CodeStudioEditor from anywhere, including a USB drive — no installation required.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="requirements">
+      <div class="container">
+        <div class="section-header reveal">
+          <h2 data-i18n="req.title">System requirements</h2>
+          <p data-i18n="req.subtitle">Modest specs, smooth experience.</p>
+        </div>
+        <div class="requirements">
+          <div class="req-item reveal">
+            <div class="req-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+            <div>
+              <div class="req-label" data-i18n="req.os.label">Operating system</div>
+              <div class="req-value" data-i18n="req.os.value">Windows 10 / 11</div>
+            </div>
+          </div>
+          <div class="req-item reveal">
+            <div class="req-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="req-label" data-i18n="req.browser.label">Browser engine</div>
+              <div class="req-value" data-i18n="req.browser.value">Microsoft Edge or Chrome</div>
+            </div>
+          </div>
+          <div class="req-item reveal">
+            <div class="req-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="4" width="16" height="16" rx="2"/>
+                <rect x="9" y="9" width="6" height="6"/>
+                <line x1="9" y1="1" x2="9" y2="4"/>
+                <line x1="15" y1="1" x2="15" y2="4"/>
+                <line x1="9" y1="20" x2="9" y2="23"/>
+                <line x1="15" y1="20" x2="15" y2="23"/>
+                <line x1="20" y1="9" x2="23" y2="9"/>
+                <line x1="20" y1="14" x2="23" y2="14"/>
+                <line x1="1" y1="9" x2="4" y2="9"/>
+                <line x1="1" y1="14" x2="4" y2="14"/>
+              </svg>
+            </div>
+            <div>
+              <div class="req-label" data-i18n="req.ram.label">Memory</div>
+              <div class="req-value" data-i18n="req.ram.value">4 GB RAM minimum</div>
+            </div>
+          </div>
+          <div class="req-item reveal">
+            <div class="req-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+              </svg>
+            </div>
+            <div>
+              <div class="req-label" data-i18n="req.disk.label">Disk space</div>
+              <div class="req-value" data-i18n="req.disk.value">~100 MB free space</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="final-cta">
+      <div class="container reveal">
+        <h2 data-i18n="cta.title">Ready to write code faster?</h2>
+        <p data-i18n="cta.subtitle">Download CodeStudioEditor V1.0.0 and start coding in seconds.</p>
+        <button type="button" class="btn btn-primary btn-lg download-btn">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span data-i18n="cta.download">Download for Windows</span>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-brand">
+        <img src="https://i.ibb.co/1GWrgRLy/codeeditorstudio.png" alt="CodeStudioEditor logo" width="24" height="24">
+        <span>CodeStudioEditor</span>
+      </div>
+      <div class="footer-meta">
+        <span data-i18n="footer.developed">Developed by</span>
+        <a href="https://github.com/alexis-dpt" target="_blank" rel="noopener noreferrer">@alexis_dpt</a>
+        <span>V1.0.0</span>
+        <span>© 2026</span>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+    <span id="toast-message">Download started</span>
+  </div>
+
+  <script>
+    const DOWNLOAD_URL = '#';
+
+    const translations = {
+      en: {
+        'nav.features': 'Features',
+        'nav.install': 'Install',
+        'nav.requirements': 'Requirements',
+        'nav.download': 'Download',
+        'hero.title': 'A lightweight code editor built for speed',
+        'hero.subtitle': "CodeStudioEditor gives you everything you need to write code on Windows — nothing you don't.",
+        'hero.download': 'Download for Windows',
+        'hero.github': 'View on GitHub',
+        'hero.free': 'Free',
+        'hero.lightweight': 'Lightweight',
+        'hero.windows': 'Windows 10/11',
+        'features.title': 'Everything you need, nothing more',
+        'features.subtitle': 'Built around the tools you actually use, with zero bloat.',
+        'features.f1.title': 'Full file manager',
+        'features.f1.desc': 'Create, rename, delete, duplicate and copy-paste files and folders without leaving the editor.',
+        'features.f2.title': 'Search & replace',
+        'features.f2.desc': 'Find anything instantly with Ctrl+F, including full regex support for advanced patterns.',
+        'features.f3.title': 'Syntax highlighting & error detection',
+        'features.f3.desc': 'Clear, accurate coloring and inline error markers help you spot problems before running code.',
+        'features.f4.title': 'Tabs & command palette',
+        'features.f4.desc': 'Work on multiple files at once and reach any action with Ctrl+Shift+P.',
+        'features.f5.title': '8 themes + custom themes',
+        'features.f5.desc': 'Pick from eight built-in themes or create your own palette to match your style.',
+        'features.f6.title': 'Optimized for 4 GB RAM',
+        'features.f6.desc': 'Lightweight by design — CodeStudioEditor runs smoothly even on modest hardware.',
+        'install.title': 'Up and running in seconds',
+        'install.subtitle': "Install it and launch it — that's it. Or unzip for a portable build.",
+        'install.s1.title': 'Download the installer',
+        'install.s1.desc': 'Grab the latest setup .exe for Windows.',
+        'install.s2.title': 'Install and launch',
+        'install.s2.desc': "Run the setup, launch the app and you're in.",
+        'install.s3.title': 'Start coding',
+        'install.s3.desc': "Open a folder or a file and you're ready to go.",
+        'install.note': 'Prefer portable? Unzip the installer archive to run CodeStudioEditor from anywhere, including a USB drive — no installation required.',
+        'req.title': 'System requirements',
+        'req.subtitle': 'Modest specs, smooth experience.',
+        'req.os.label': 'Operating system',
+        'req.os.value': 'Windows 10 / 11',
+        'req.browser.label': 'Browser engine',
+        'req.browser.value': 'Microsoft Edge or Chrome',
+        'req.ram.label': 'Memory',
+        'req.ram.value': '4 GB RAM minimum',
+        'req.disk.label': 'Disk space',
+        'req.disk.value': '~100 MB free space',
+        'cta.title': 'Ready to write code faster?',
+        'cta.subtitle': 'Download CodeStudioEditor V1.0.0 and start coding in seconds.',
+        'cta.download': 'Download for Windows',
+        'footer.developed': 'Developed by',
+        'toast.download': 'Download started'
+      },
+      fr: {
+        'nav.features': 'Fonctionnalités',
+        'nav.install': 'Installation',
+        'nav.requirements': 'Prérequis',
+        'nav.download': 'Télécharger',
+        'hero.title': 'Un éditeur de code léger et taillé pour la vitesse',
+        'hero.subtitle': "CodeStudioEditor vous donne tout ce qu'il faut pour coder sous Windows — rien de superflu.",
+        'hero.download': 'Télécharger pour Windows',
+        'hero.github': 'Voir sur GitHub',
+        'hero.free': 'Gratuit',
+        'hero.lightweight': 'Léger',
+        'hero.windows': 'Windows 10/11',
+        'features.title': "Tout ce qu'il vous faut, rien de plus",
+        'features.subtitle': 'Pensé autour des outils que vous utilisez vraiment, sans bloatware.',
+        'features.f1.title': 'Gestionnaire de fichiers complet',
+        'features.f1.desc': "Créez, renommez, supprimez, dupliquez et copiez-collez vos fichiers et dossiers sans quitter l'éditeur.",
+        'features.f2.title': 'Recherche & remplacement',
+        'features.f2.desc': "Trouvez n'importe quoi instantanément avec Ctrl+F, avec prise en charge des regex.",
+        'features.f3.title': "Coloration syntaxique & détection d'erreurs",
+        'features.f3.desc': "Une coloration précise et des marqueurs d'erreur inline pour repérer les problèmes avant d'exécuter.",
+        'features.f4.title': 'Onglets multiples & palette de commandes',
+        'features.f4.desc': 'Travaillez sur plusieurs fichiers à la fois et accédez à toutes les actions avec Ctrl+Shift+P.',
+        'features.f5.title': '8 thèmes + thèmes personnalisés',
+        'features.f5.desc': 'Choisissez parmi huit thèmes intégrés ou créez votre propre palette selon vos goûts.',
+        'features.f6.title': 'Optimisé pour 4 Go de RAM',
+        'features.f6.desc': 'Léger par conception — CodeStudioEditor reste fluide même sur du matériel modeste.',
+        'install.title': 'Prêt à coder en quelques secondes',
+        'install.subtitle': "Installez-le et lancez-le, c'est tout. Ou dézippez pour une version portable.",
+        'install.s1.title': "Téléchargez l'installeur",
+        'install.s1.desc': 'Récupérez le setup .exe pour Windows.',
+        'install.s2.title': 'Installez et lancez',
+        'install.s2.desc': "Lancez le setup, ouvrez l'app, c'est parti.",
+        'install.s3.title': 'Codez',
+        'install.s3.desc': "Ouvrez un dossier ou un fichier et c'est parti.",
+        'install.note': "Version portable ? Dézippez l'archive pour lancer CodeStudioEditor depuis n'importe où, même une clé USB — aucune installation requise.",
+        'req.title': 'Configuration requise',
+        'req.subtitle': 'Des specs modestes, une expérience fluide.',
+        'req.os.label': "Système d'exploitation",
+        'req.os.value': 'Windows 10 / 11',
+        'req.browser.label': 'Moteur de navigateur',
+        'req.browser.value': 'Microsoft Edge ou Chrome',
+        'req.ram.label': 'Mémoire',
+        'req.ram.value': '4 Go de RAM minimum',
+        'req.disk.label': 'Espace disque',
+        'req.disk.value': "~100 Mo d'espace libre",
+        'cta.title': 'Prêt à coder plus vite ?',
+        'cta.subtitle': 'Téléchargez CodeStudioEditor V1.0.0 et commencez à coder en quelques secondes.',
+        'cta.download': 'Télécharger pour Windows',
+        'footer.developed': 'Développé par',
+        'toast.download': 'Téléchargement lancé'
+      }
+    };
+
+    const titles = {
+      en: 'CodeStudioEditor — Lightweight modern code editor for Windows',
+      fr: 'CodeStudioEditor — Éditeur de code léger et moderne pour Windows'
+    };
+
+    let currentLang = 'en';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      document.documentElement.lang = lang;
+      document.title = titles[lang];
+      const dict = translations[lang];
+      document.querySelectorAll('[data-i18n]').forEach(function (el) {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key] !== undefined) {
+          el.textContent = dict[key];
+        }
+      });
+      document.querySelectorAll('.lang-switch button').forEach(function (btn) {
+        const active = btn.getAttribute('data-lang') === lang;
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      try {
+        localStorage.setItem('cse-lang', lang);
+      } catch (e) {}
+    }
+
+    function detectLanguage() {
+      try {
+        const saved = localStorage.getItem('cse-lang');
+        if (saved && (saved === 'en' || saved === 'fr')) {
+          return saved;
+        }
+      } catch (e) {}
+      const navLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+      return navLang.startsWith('fr') ? 'fr' : 'en';
+    }
+
+    let toastTimer = null;
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toast-message');
+      toastMessage.textContent = message;
+      toast.classList.add('show');
+      if (toastTimer) {
+        clearTimeout(toastTimer);
+      }
+      toastTimer = setTimeout(function () {
+        toast.classList.remove('show');
+      }, 2800);
+    }
+
+    function handleDownload(button) {
+      button.style.transform = 'scale(0.94)';
+      setTimeout(function () {
+        button.style.transform = '';
+      }, 160);
+      showToast(translations[currentLang]['toast.download']);
+      if (DOWNLOAD_URL && DOWNLOAD_URL !== '#') {
+        const a = document.createElement('a');
+        a.href = DOWNLOAD_URL;
+        a.setAttribute('download', '');
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      setLanguage(detectLanguage());
+
+      document.querySelectorAll('.lang-switch button').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          setLanguage(btn.getAttribute('data-lang'));
+        });
+      });
+
+      document.querySelectorAll('.download-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          handleDownload(btn);
+        });
+      });
+
+      const navbar = document.getElementById('navbar');
+      function onScroll() {
+        if (window.scrollY > 20) {
+          navbar.classList.add('scrolled');
+        } else {
+          navbar.classList.remove('scrolled');
+        }
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (!prefersReducedMotion && 'IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, {
+          threshold: 0.12,
+          rootMargin: '0px 0px -40px 0px'
+        });
+        document.querySelectorAll('.reveal').forEach(function (el) {
+          observer.observe(el);
+        });
+      } else {
+        document.querySelectorAll('.reveal').forEach(function (el) {
+          el.classList.add('visible');
+        });
+      }
+
+      document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
+        anchor.addEventListener('click', function (e) {
+          const targetId = this.getAttribute('href');
+          if (targetId === '#') return;
+          const target = document.querySelector(targetId);
+          if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
